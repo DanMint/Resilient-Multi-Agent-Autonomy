@@ -10,7 +10,7 @@ async def health() -> dict:
         "status": "ok",
         "service": "drone-brain",
         "state": "S0_IDLE",
-        "reasoner": "llm" if using_llm else "rule",
+        # "reasoner": "llm" if using_llm else "rule",
         # "model": cfg.hf_model if using_llm else None,
     }
 

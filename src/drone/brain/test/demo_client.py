@@ -2,6 +2,8 @@ import json
 import urllib.request
 
 def main():
+    # testing plane
+    print("---------------plan---------------")
     url = "http://127.0.0.1:7000/plan"
 
     data = json.dumps({
@@ -18,5 +20,13 @@ def main():
 
     print(response.read().decode())
 
+    # testing health
+    print("---------------health---------------")
+    url = "http://127.0.0.1:7000/health"
+
+    response = urllib.request.urlopen(url)
+
+    print(response.read().decode())
+    
 if __name__ == "__main__":
     main()
