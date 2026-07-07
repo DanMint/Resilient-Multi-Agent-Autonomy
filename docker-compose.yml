@@ -1,0 +1,64 @@
+# Each drone has a static IP so peers can reach each other without discovery.
+# Identity, peer list, mission, and safety bounds are passed via environment
+# (keeps IPs out of the C++ source and makes experiments easy to reconfigure).
+services:
+    drone-a:
+        container_name: D1
+        build:
+            context: .
+            dockerfile: src/drone/DockerFile.Drone
+        networks:
+            CPS-Network:
+                ipv4_address: 172.20.0.10
+        environment:
+            DRONE_ID: D1
+            SELF_IP: 172.20.0.10
+            PEERS: "D2=172.20.0.20"
+            START_X: "0"
+            START_Y: "0"
+            GOAL: waypoint-A
+            GOAL_X: "10"
+            GOAL_Y: "0"
+            # geofence that safely contains the mission
+            GEO_MIN_X: "-5"
+            GEO_MIN_Y: "-5"
+            GEO_MAX_X: "15"
+            GEO_MAX_Y: "5"
+            TICK_SECONDS: "2"
+            # Brain runs its offline rule planner by default. To use a live model:
+            # BRAIN_USE_LLM: "1"
+            # HF_API_TOKEN: "hf_xxx"
+            # HF_MODEL: "openai/gpt-oss-120b:cheapest"
+
+    drone-b:
+        container_name: D2
+        build:
+            context: .
+            dockerfile: src/drone/DockerFile.Drone
+        networks:
+            CPS-Network:
+                ipv4_address: 172.20.0.20
+        environment:
+            DRONE_ID: D2
+            SELF_IP: 172.20.0.20
+            PEERS: "D1=172.20.0.10"
+            START_X: "0"
+            START_Y: "2"
+            GOAL: waypoint-B
+            GOAL_X: "10"
+            GOAL_Y: "2"
+            GEO_MIN_X: "-5"
+            GEO_MIN_Y: "-5"
+            GEO_MAX_X: "15"
+            GEO_MAX_Y: "5"
+            TICK_SECONDS: "2"
+            # Flip this to seed a poisoned memory on D2 that propagates to D1
+            # over gossip and is independently quarantined by each drone:
+            # INJECT_POISON: "1"
+
+networks:
+    CPS-Network:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.0.0/24

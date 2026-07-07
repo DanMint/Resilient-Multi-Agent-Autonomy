@@ -1,2 +1,4 @@
 myenv/
 src/drone/brain/__pycache__/
+src/.DS_Store
+src/drone/.DS_Store

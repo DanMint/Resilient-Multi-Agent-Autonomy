@@ -1,25 +1,31 @@
-#include "../include/utils.h"
+// utils.cpp
+#include "utils.hpp"
 
-void Utils::checkValidityOfNetwork(const std::unordered_map<std::string, std::string> &ips, const std::string &hostName) {
-    std::cout << "Checking network validity via pings" << std::endl;
+#include <cstdlib>
+#include <iostream>
+#include <string>
 
-    for (const auto &IP : ips) {
-        if (IP.first == hostName) {
-            std::cout << "Skipping ping because its current CPS" << std::endl;
-            continue;
-        }
+namespace Utils {
 
-        // command sends ICMP packet
-        const std::string command = "ping -c 1 -W 1 " + IP.second + " > /dev/null 2>&1";
-
-        // get status after ping
-        int status = system(command.c_str());
-
-        if (status == 0) 
-            std::cout << "Ping to drone no." << IP.first << " with IP: " << IP.second << " successfull!" << std::endl;
-        else {
-            std::cerr << "Ping to drone no." << IP.first << " with IP: " << IP.second << " FAILED!" << std::endl;
-            std::exit(EXIT_FAILURE);
+int check_network(const Config& cfg) {
+    if (cfg.peers.empty()) {
+        std::cout << "[" << cfg.drone_id << "] no peers configured\n";
+        return 0;
+    }
+    std::cout << "[" << cfg.drone_id << "] checking peer reachability via ping...\n";
+    int reachable = 0;
+    for (const auto& [id, ip] : cfg.peers) {
+        std::string cmd = "ping -c 1 -W 1 " + ip + " > /dev/null 2>&1";
+        if (std::system(cmd.c_str()) == 0) {
+            std::cout << "  peer " << id << " (" << ip << ") reachable\n";
+            ++reachable;
+        } else {
+            std::cout << "  peer " << id << " (" << ip << ") not reachable yet\n";
         }
     }
+    std::cout << "[" << cfg.drone_id << "] " << reachable << "/" << cfg.peers.size()
+              << " peers reachable\n";
+    return reachable;
 }
+
+}  // namespace Utils

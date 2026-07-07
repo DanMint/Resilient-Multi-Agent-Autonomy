@@ -3,14 +3,30 @@ FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y \
     build-essential \
     iputils-ping \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
+
+# Python brain dependencies. The brain runs its offline rule planner by default;
+# set BRAIN_USE_LLM=1 (+ HF_API_TOKEN, HF_MODEL) via compose to use a live model.
+RUN pip3 install --no-cache-dir --break-system-packages \
+    fastapi \
+    uvicorn \
+    pydantic
 
 WORKDIR /app
 
+# C++ body sources
 COPY src/drone/include ./include
 COPY src/drone/src ./src
 COPY src/drone/main.cpp .
 
-RUN g++ -std=c++20 -I include src/utils.cpp main.cpp  -o main
+# Python brain (unchanged) + launcher that starts the brain, then the body
+COPY src/drone/brain ./brain
+COPY src/drone/entrypoint.sh .
 
-ENTRYPOINT ["./main"]
+# Dependency-free build: plain g++, just needs pthreads for the gossip listener.
+RUN g++ -std=c++20 -I include -O2 src/*.cpp main.cpp -o main -lpthread \
+    && chmod +x entrypoint.sh
+
+ENTRYPOINT ["./entrypoint.sh"]
