@@ -1,23 +1,19 @@
-#include <unistd.h>
-#include <iostream>
-#include <vector>
-#include <unordered_map>
+// main.cpp -- drone body entry point.
+#include "config.hpp"
+#include "drone.hpp"
 
-#include "utils.h"
+#include <iostream>
 
 int main() {
-    // pre defined IPs of all of the drones
-    const std::unordered_map<std::string, std::string> droneIps = {
-        {"D1", "172.20.0.10"},
-        {"D2", "172.20.0.20"}
-    };
+    Config cfg = Config::from_env();
 
-    // get name of docker container
-    char hostname[256];
-    gethostname(hostname, sizeof(hostname));
-    std::string hostnameStr(hostname);
+    std::cout << "=== drone body ===\n"
+              << "  id    : " << cfg.drone_id << "\n"
+              << "  ip    : " << (cfg.self_ip.empty() ? "(unset)" : cfg.self_ip) << "\n"
+              << "  peers : " << cfg.peers.size() << "\n";
+    for (const auto& [id, ip] : cfg.peers) std::cout << "    - " << id << " @ " << ip << "\n";
 
-    std::cout << "Im drone number: " << hostname << std::endl;
-
-    Utils::checkValidityOfNetwork(droneIps, hostnameStr);
+    Drone drone(cfg);
+    drone.run();
+    return 0;
 }
